@@ -464,6 +464,16 @@ textarea {
   appearance: textfield;
 }
 
+.option-input[type="number"]::-webkit-inner-spin-button,
+.option-input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.option-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 .option-input[type="text"],
 .option-input[type="number"],
 .option-input[type="search"],
@@ -486,6 +496,18 @@ select.option-input {
   width: 18px;
   height: 18px;
   accent-color: var(--accent);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.checkbox-inline input:hover,
+.option-checkbox:hover {
+  transform: scale(1.1);
+}
+
+.checkbox-inline input:checked,
+.option-checkbox:checked {
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.2);
 }
 
 .checkbox-inline-large {
@@ -506,7 +528,7 @@ select.option-input {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  align-items: flex-start;
+  align-items: center;
   min-width: 0;
   margin-top: auto;
 }

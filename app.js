@@ -27,16 +27,17 @@ const DEFAULTS = {
   AllowShortIfStatementsOnASingleLine: "Never",
   AllowShortFunctionsOnASingleLine: "InlineOnly",
   AlignConsecutiveAssignments: "Consecutive",
-  AlignAfterOpenBracket: true,
+  AlignAfterOpenBracket: "Align",
   CompactNamespaces: false,
   IndentCaseLabels: true,
-  SortIncludes: "Enabled: true",
+  SortIncludes: "CaseInsensitive",
   SeparateDefinitionBlocks: "Leave",
 };
 
 const ENUMS = {
   BasedOnStyle: ["LLVM", "Google", "Chromium", "Mozilla", "WebKit", "Microsoft", "GNU", "InheritParentConfig"],
   AlignArrayOfStructures: ["Left", "Right", "None"],
+  AlignAfterOpenBracket: ["Align", "DontAlign", "AlwaysBreak", "BlockIndent"],
   AlignEscapedNewlines: ["DontAlign", "Left", "LeftWithLastLine", "Right"],
   AlignOperands: ["DontAlign", "Align", "AlignAfterOperator"],
   AllowBreakBeforeNoexceptSpecifier: ["Never", "OnlyWithParen", "Always"],
@@ -46,7 +47,7 @@ const ENUMS = {
   AllowShortLambdasOnASingleLine: ["None", "Empty", "Inline", "All"],
   AllowShortRecordOnASingleLine: ["Never", "EmptyAndAttached", "Empty", "Always"],
   AlwaysBreakAfterDefinitionReturnType: ["None", "All", "TopLevel"],
-  BinPackParameters: ["BinPack", "OnePerLine", "AlwaysOnePerLine"],
+
   BitFieldColonSpacing: ["Both", "None", "Before", "After"],
   BreakAfterAttributes: ["Always", "Leave", "LeaveAll", "Never"],
   BreakAfterReturnType: ["None", "Automatic", "ExceptShortType", "All", "TopLevel", "AllDefinitions", "TopLevelDefinitions"],
@@ -84,6 +85,7 @@ const ENUMS = {
   SeparateDefinitionBlocks: ["Leave", "Always", "Never"],
   SortJavaStaticImport: ["Before", "After"],
   SortUsingDeclarations: ["Never", "Lexicographic", "LexicographicNumeric"],
+  SortIncludes: ["CaseInsensitive", "CaseSensitive", "Never"],
   SpaceAroundPointerQualifiers: ["Default", "Before", "After", "Both"],
   SpaceBeforeParens: ["Never", "ControlStatements", "ControlStatementsExceptControlMacros", "NonEmptyParentheses", "Always", "Custom"],
   SpaceInEmptyBraces: ["Always", "Block", "Never"],
@@ -98,14 +100,14 @@ const ENUMS = {
 const COMPLEX_TYPES = new Set([
   "AlignConsecutiveStyle",
   "BreakBinaryOperationsOptions",
-  "BraceWrappingFlags",
+
   "IntegerLiteralSeparatorStyle",
   "KeepEmptyLinesStyle",
   "NumericLiteralCaseStyle",
   "ShortCaseStatementsAlignmentStyle",
   "SortIncludesOptions",
   "SpacesInLineComment",
-  "SpaceBeforeParensCustom",
+
   "SpacesInParensCustom",
   "TrailingCommentsAlignmentStyle",
 ]);
@@ -459,6 +461,11 @@ const yamlOutput = $("#yamlOutput");
 const yamlMeta = $("#yamlMeta");
 const copyButton = $("#copyButton");
 const downloadButton = $("#downloadButton");
+const importButton = $("#importButton");
+const fileInput = document.createElement("input");
+fileInput.type = "file";
+fileInput.accept = ".clang-format";
+fileInput.style.display = "none";
 const resetButton = $("#resetButton");
 
 function inferDescription(meta) {
@@ -666,7 +673,7 @@ function buildCard(meta) {
     renderAll();
   };
 
-  input.addEventListener(control === "checkbox" ? "change" : "input", sync);
+  input.addEventListener("input", sync);
   if (control === "select") input.addEventListener("change", sync);
   input.addEventListener("focus", () => setActive(state[meta.name].group));
   card.addEventListener("click", () => setActive(state[meta.name].group));
@@ -813,27 +820,63 @@ function previewScene() {
     const ns = str("NamespaceIndentation", "All");
     const outer = ns === "All" ? 1 : 0;
     const inner = ns === "None" ? 0 : ns === "Inner" ? 1 : 2;
-    const caseIndent = bool("IndentCaseLabels", true) ? indent(inner + 2) : indent(inner + 1);
+    const indentWidth = num("IndentWidth", 4);
+    const caseLabelsIndented = bool("IndentCaseLabels", true);
+    const caseBlocksIndented = bool("IndentCaseBlocks", false);
+    const accessModifiersIndented = bool("IndentAccessModifiers", false);
+    const constructorInitializerIndentWidth = num("ConstructorInitializerIndentWidth", 4);
+    const continuationIndentWidth = num("ContinuationIndentWidth", 4);
+    const bracedInitializerIndentWidth = num("BracedInitializerIndentWidth", -1);
+    const lambdaBodyIndentation = str("LambdaBodyIndentation", "Signature");
+    
+    // 计算switch语句的缩进级别
+    const switchIndent = inner + 3;
+    const caseLabelIndent = caseLabelsIndented ? switchIndent + 1 : switchIndent;
+    const caseBlockIndent = caseBlocksIndented ? caseLabelIndent + 1 : caseLabelIndent;
+    const accessModifierIndent = accessModifiersIndented ? inner + 2 : inner + 1;
+    
+    // 计算lambda的缩进级别
+    const lambdaIndent = lambdaBodyIndentation === "OuterScope" ? inner + 2 : inner + 3;
+    
     return {
       title: "缩进预览",
-      description: "只展示命名空间、续行缩进和 switch/case 的缩进差异。",
+      description: "展示命名空间、续行缩进、switch/case、类成员访问修饰符、构造函数初始化列表、lambda体和IndentWidth的缩进差异。",
       code: [
         "namespace demo",
         "{",
         `${indent(outer)}namespace detail`,
         `${indent(outer)}{`,
-        `${indent(inner)}void render()`,
+        `${indent(inner)}class Formatter`,
         `${indent(inner)}{`,
-        `${indent(inner + 1)}auto payload = buildPreview(`,
-        `${indent(inner + 1)}${cont(1)}firstArgument,`,
-        `${indent(inner + 1)}${cont(1)}secondArgument);`,
-        `${indent(inner + 1)}switch${spaceBefore("control")}(mode) {`,
-        `${caseIndent}case 0:`,
-        `${bool("IndentCaseLabels", true) ? indent(inner + 3) : indent(inner + 2)}break;`,
-        `${caseIndent}default:`,
-        `${bool("IndentCaseLabels", true) ? indent(inner + 3) : indent(inner + 2)}break;`,
-        `${indent(inner + 1)}}`,
-        `${indent(inner)}}`,
+        `${indent(accessModifierIndent)}public:`,
+        `${indent(inner + 2)}Formatter(int m, const std::string& n)`,
+        `${indent(inner + 2)}    : mode(m)`,
+        `${indent(inner + 2)}    , name(n) {}`,
+        `${indent(inner + 2)}void render()`,
+        `${indent(inner + 2)}{`,
+        `${indent(inner + 3)}auto payload = buildPreview(`,
+        `${indent(inner + 3)}${cont(1)}firstArgument,`,
+        `${indent(inner + 3)}${cont(1)}secondArgument,`,
+        `${indent(inner + 3)}${cont(1)}thirdArgument);`,
+        `${indent(inner + 3)}switch${spaceBefore('control')}(mode) {`,
+        `${indent(caseLabelIndent)}case 0:`,
+        `${indent(caseBlockIndent)}processFirstCase();`,
+        `${indent(caseBlockIndent)}break;`,
+        `${indent(caseLabelIndent)}case 1:`,
+        `${indent(caseBlockIndent)}processSecondCase();`,
+        `${indent(caseBlockIndent)}break;`,
+        `${indent(caseLabelIndent)}default:`,
+        `${indent(caseBlockIndent)}processDefaultCase();`,
+        `${indent(caseBlockIndent)}break;`,
+        `${indent(inner + 3)}}`,
+        `${indent(inner + 3)}auto lambda = [this]() {`,
+        `${indent(lambdaIndent)}return mode + name.length();`,
+        `${indent(inner + 3)}};`,
+        `${indent(inner + 2)}}`,
+        `${indent(accessModifierIndent)}private:`,
+        `${indent(inner + 2)}int mode;`,
+        `${indent(inner + 2)}std::string name;`,
+        `${indent(inner)}};`,
         `${indent(outer)}}`,
         "}",
       ].join("\n"),
@@ -843,11 +886,18 @@ function previewScene() {
   if (activeGroup === "spacing") {
     const aligned = !/none|false/i.test(str("AlignConsecutiveAssignments", "Consecutive"));
     const continued = bool("AlignAfterOpenBracket", true) ? "             " : cont(1);
+    const spaceBeforeAssignment = bool("SpaceBeforeAssignmentOperators", true);
+    const spaceBeforeCtorColon = bool("SpaceBeforeCtorInitializerColon", true);
+    const spaceBeforeInheritanceColon = bool("SpaceBeforeInheritanceColon", true);
+    const spaceBeforeCaseColon = bool("SpaceBeforeCaseColon", false);
+    const spaceInEmptyBraces = str("SpaceInEmptyBraces", "Never");
+    const spaceAfterTemplateKeyword = bool("SpaceAfterTemplateKeyword", true);
+    
     return {
       title: "空格与对齐预览",
-      description: "只展示指针/引用、括号前空格、开括号后对齐与连续赋值对齐。",
+      description: "展示指针/引用、括号前空格、赋值运算符空格、冒号空格、模板关键字空格与连续赋值对齐。",
       code: [
-        `std::string format${spaceBefore("function")}(${pointerToken()}, ${referenceToken()}, bool ready)`,
+        `std::string format${spaceBefore('function')}(${pointerToken()}, ${referenceToken()}, bool ready)`,
         "{",
         `${indent(1)}auto payload = buildPreview(`,
         `${indent(1)}${continued}label,`,
@@ -855,7 +905,34 @@ function previewScene() {
         `${indent(1)}${continued}ready);`,
         "",
         aligned ? `${indent(1)}auto width   = 120;` : `${indent(1)}auto width = 120;`,
+        aligned ? `${indent(1)}auto height  = 80;` : `${indent(1)}auto height = 80;`,
         aligned ? `${indent(1)}auto retries = 3;` : `${indent(1)}auto retries = 3;`,
+        aligned ? `${indent(1)}auto timeout = 5000;` : `${indent(1)}auto timeout = 5000;`,
+        "",
+        `${indent(1)}if${spaceBefore('control')}(ready)`,
+        `${indent(1)}{`,
+        `${indent(2)}return format${spaceBefore('function')}(ptr, ref, true);`,
+        `${indent(1)}}`,
+        "}",
+        "",
+        "class Derived : public Base",  // 受SpaceBeforeInheritanceColon影响
+        "{",
+        `${indent(1)}public:`,
+        `${indent(1)}Derived()${spaceBeforeCtorColon ? " " : ""}: value(0) {}`,  // 受SpaceBeforeCtorInitializerColon影响
+        `${indent(1)}void process()`,
+        `${indent(1)}{`,
+        `${indent(2)}int x${spaceBeforeAssignment ? " " : ""}= 10;`,  // 受SpaceBeforeAssignmentOperators影响
+        `${indent(2)}switch (mode) {`,
+        `${indent(3)}case 0${spaceBeforeCaseColon ? " " : ""}:`,  // 受SpaceBeforeCaseColon影响
+        `${indent(4)}break;`,
+        `${indent(3)}}`,
+        `${indent(2)}}`,
+        "};",
+        "",
+        `${spaceAfterTemplateKeyword ? "template <typename T>" : "template<typename T>"}`,  // 受SpaceAfterTemplateKeyword影响
+        "void process()",
+        "{",
+        `${indent(1)}std::vector<int> empty${spaceInEmptyBraces === "Always" ? "{ }" : "{}"};`,  // 受SpaceInEmptyBraces影响
         "}",
       ].join("\n"),
     };
@@ -864,18 +941,63 @@ function previewScene() {
   if (activeGroup === "braces") {
     const breakBefore = ["Allman", "GNU", "Whitesmiths", "Mozilla"].includes(str("BreakBeforeBraces", "Attach"));
     const compact = bool("CompactNamespaces", false);
+    const breakConstructorInitializers = str("BreakConstructorInitializers", "BeforeColon");
+    const breakInheritanceList = str("BreakInheritanceList", "BeforeColon");
+    const packConstructorInitializers = str("PackConstructorInitializers", "BinPack");
+    const emptyLineAfterAccessModifier = str("EmptyLineAfterAccessModifier", "Leave");
+    const emptyLineBeforeAccessModifier = str("EmptyLineBeforeAccessModifier", "Leave");
+    
     const lines = compact ? ["namespace demo::detail"] : ["namespace demo"];
     if (breakBefore) lines.push("{"); else lines[0] += " {";
     if (!compact) lines.push(`${indent(1)}namespace detail`, `${indent(1)}{`);
     const level = compact ? 1 : 2;
+    
+    // 添加空行控制
+    if (emptyLineBeforeAccessModifier === "Always") lines.push("");
+    
     if (breakBefore) lines.push(`${indent(level)}void render()`, `${indent(level)}{`); else lines.push(`${indent(level)}void render() {`);
     lines.push(`${indent(level + 1)}apply();`);
     lines.push(`${indent(level)}}`);
+    
     if (str("SeparateDefinitionBlocks", "Leave") === "Always") lines.push("");
-    lines.push(`${indent(level)}int score() { return 42; }`);
+    
+    // 构造函数，展示BreakConstructorInitializers和PackConstructorInitializers
+    if (breakBefore) lines.push(`${indent(level)}Formatter()`, `${indent(level)}${breakConstructorInitializers === "BeforeColon" ? ":" : ""}`); 
+    else lines.push(`${indent(level)}Formatter() ${breakConstructorInitializers === "BeforeColon" ? ":" : ""}`);
+    
+    if (packConstructorInitializers === "BinPack") {
+      lines.push(`${indent(level + 1)}: mode(0), name(""), value(42) {}`);
+    } else if (packConstructorInitializers === "NextLine") {
+      lines.push(`${indent(level + 1)}: mode(0)`);
+      lines.push(`${indent(level + 1)}, name("")`);
+      lines.push(`${indent(level + 1)}, value(42) {}`);
+    } else {
+      lines.push(`${indent(level + 1)}: mode(0), name(""), value(42) {}`);
+    }
+    lines.push(`${indent(level)}}`);
+    
+    if (str("SeparateDefinitionBlocks", "Leave") === "Always") lines.push("");
+    
+    // 类定义，展示BreakInheritanceList
+    if (breakBefore) lines.push(`${indent(level)}class Formatter`, `${indent(level)}${breakInheritanceList === "BeforeColon" ? ": public Base" : ""}`); 
+    else lines.push(`${indent(level)}class Formatter${breakInheritanceList === "BeforeColon" ? " : public Base" : ""} {`);
+    
+    if (breakBefore && breakInheritanceList === "BeforeColon") {
+      lines.push(`${indent(level + 1)}: public Base`);
+      lines.push(`${indent(level)}{`);
+    }
+    
+    if (emptyLineAfterAccessModifier === "Always") lines.push("");
+    lines.push(`${indent(level + 1)}public:`);
+    if (emptyLineAfterAccessModifier === "Always") lines.push("");
+    
+    if (breakBefore) lines.push(`${indent(level + 2)}void process()`, `${indent(level + 2)}{`); else lines.push(`${indent(level + 2)}void process() {`);
+    lines.push(`${indent(level + 3)}// implementation`);
+    lines.push(`${indent(level + 2)}}`);
+    lines.push(`${indent(level)}};`);
     if (!compact) lines.push(`${indent(1)}}`);
     lines.push("}");
-    return { title: "换行与花括号预览", description: "只展示花括号位置、紧凑命名空间和定义块间空行的效果。", code: lines.join("\n") };
+    return { title: "换行与花括号预览", description: "展示花括号位置、紧凑命名空间、构造函数初始化列表、继承列表、访问修饰符空行和定义块间空行的效果。", code: lines.join("\n") };
   }
 
   if (activeGroup === "include") {
@@ -885,15 +1007,26 @@ function previewScene() {
   if (activeGroup === "comments") {
     return {
       title: "注释与空行预览",
-      description: "只展示注释回流和注释相关的排版片段。",
+      description: "展示注释回流和注释相关的排版片段。",
       code: [
         ...commentLines("This preview isolates comment wrapping, empty line behavior and line-comment spacing for quick comparison.", 0),
         "",
         "class FormatterPreview",
         "{",
-        `${indent(1)}// keep one focused comment line`,
+        `${indent(1)}// This is a single line comment`,
         `${indent(1)}int score;`,
-        "};",
+        "",
+        `${indent(1)}/* This is a multi-line comment`,
+        `${indent(1)}   that spans multiple lines`,
+        `${indent(1)}   to demonstrate comment wrapping */`,
+        `${indent(1)}std::string name;`,
+        "",
+        `${indent(1)}// Another single line comment`,
+        `${indent(1)}void process()`,
+        `${indent(1)}{`,
+        `${indent(2)}// Implementation comment`,
+        `${indent(1)}}`,
+        "};"
       ].join("\n"),
     };
   }
@@ -909,6 +1042,19 @@ function previewScene() {
         `${indent(1)}value.render();`,
         "}",
         "",
+        "template <typename T, typename U>",
+        "auto combine${spaceBefore('function')}(T&& t, U&& u) -> decltype(auto)",
+        "{",
+        `${indent(1)}return t + u;`,
+        "}",
+        "",
+        "enum class Color",
+        "{",
+        `${indent(1)}Red,`,
+        `${indent(1)}Green,`,
+        `${indent(1)}Blue,`,
+        "};",
+        "",
         "BraceWrapping:",
         "  AfterClass: true",
         "  AfterFunction: false",
@@ -918,15 +1064,19 @@ function previewScene() {
 
   return {
     title: "基础风格预览",
-    description: "只展示列宽、短 if、短函数与基础风格最相关的片段。",
+    description: "展示列宽、短 if、短函数与基础风格最相关的片段。",
     code: [
       ...commentLines("This scene focuses on column width, short statements and the baseline style cascade.", 0),
       "",
       str("AllowShortFunctionsOnASingleLine", "InlineOnly") === "None" ? "inline int score()\n{\n    return 42;\n}" : "inline int score() { return 42; }",
       "",
       str("AllowShortIfStatementsOnASingleLine", "Never") === "Never"
-        ? `if${spaceBefore("control")}(ready)\n{\n${indent(1)}return score();\n}`
-        : `if${spaceBefore("control")}(ready) return score();`,
+        ? `if${spaceBefore('control')}(ready)\n{\n${indent(1)}return score();\n}`
+        : `if${spaceBefore('control')}(ready) return score();`,
+      "",
+      str("AllowShortBlocksOnASingleLine", "Never") === "Never"
+        ? `for${spaceBefore('control')}(int i = 0; i < 10; ++i)\n{\n${indent(1)}process(i);\n}`
+        : `for${spaceBefore('control')}(int i = 0; i < 10; ++i) process(i);`,
     ].join("\n"),
   };
 }
@@ -939,16 +1089,42 @@ function quote(value) {
 }
 
 function buildYaml() {
-  return metas
+  const touchedMetas = metas
     .filter((meta) => state[meta.name].touched)
-    .filter((meta) => meta.type === "Boolean" || String(state[meta.name].value).trim() !== "")
-    .map((meta) => {
+    .filter((meta) => meta.type === "Boolean" || String(state[meta.name].value).trim() !== "");
+  
+  const braceWrappingMetas = touchedMetas.filter((meta) => meta.name.startsWith("BraceWrapping."));
+  const spaceBeforeParensMetas = touchedMetas.filter((meta) => meta.name.startsWith("SpaceBeforeParensOptions."));
+  const otherMetas = touchedMetas.filter((meta) => !meta.name.startsWith("BraceWrapping.") && !meta.name.startsWith("SpaceBeforeParensOptions."));
+  
+  const otherYaml = otherMetas.map((meta) => {
+    const value = state[meta.name].value;
+    if (meta.type === "Boolean") return `${meta.name}: ${value ? "true" : "false"}`;
+    if (String(value).includes("\n")) return `${meta.name}:\n${String(value).split("\n").map((line) => `  ${line}`).join("\n")}`;
+    return `${meta.name}: ${quote(value)}`;
+  });
+  
+  let braceWrappingYaml = [];
+  if (braceWrappingMetas.length > 0) {
+    braceWrappingYaml.push("BraceWrapping:");
+    braceWrappingMetas.forEach((meta) => {
+      const key = meta.name.replace("BraceWrapping.", "");
       const value = state[meta.name].value;
-      if (meta.type === "Boolean") return `${meta.name}: ${value ? "true" : "false"}`;
-      if (String(value).includes("\n")) return `${meta.name}:\n${String(value).split("\n").map((line) => `  ${line}`).join("\n")}`;
-      return `${meta.name}: ${quote(value)}`;
-    })
-    .join("\n");
+      braceWrappingYaml.push(`  ${key}: ${value ? "true" : "false"}`);
+    });
+  }
+  
+  let spaceBeforeParensYaml = [];
+  if (spaceBeforeParensMetas.length > 0) {
+    spaceBeforeParensYaml.push("SpaceBeforeParensOptions:");
+    spaceBeforeParensMetas.forEach((meta) => {
+      const key = meta.name.replace("SpaceBeforeParensOptions.", "");
+      const value = state[meta.name].value;
+      spaceBeforeParensYaml.push(`  ${key}: ${value ? "true" : "false"}`);
+    });
+  }
+  
+  return [...otherYaml, ...braceWrappingYaml, ...spaceBeforeParensYaml].join("\n");
 }
 
 function applyFilters() {
@@ -1038,6 +1214,113 @@ changedOnlyToggle.addEventListener("change", applyFilters);
 deprecatedToggle.addEventListener("change", applyFilters);
 copyButton.addEventListener("click", copyYaml);
 downloadButton.addEventListener("click", downloadYaml);
+
+importButton.addEventListener("click", () => {
+  fileInput.click();
+});
+
+fileInput.addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const yamlContent = e.target.result;
+      const config = parseYaml(yamlContent);
+      loadConfig(config);
+      alert("配置导入成功！");
+    } catch (error) {
+      alert("导入失败：" + error.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = ""; // 重置文件输入
+});
+
+function parseYaml(yaml) {
+  const lines = yaml.split("\n");
+  const config = {};
+  let currentIndent = 0;
+  let currentPath = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const indent = line.length - trimmed.length;
+    const colonIndex = trimmed.indexOf(":");
+    if (colonIndex === -1) continue;
+
+    const key = trimmed.substring(0, colonIndex).trim();
+    const value = trimmed.substring(colonIndex + 1).trim();
+
+    // 调整当前路径
+    while (indent < currentIndent) {
+      currentPath.pop();
+      currentIndent -= 2; // 假设缩进为2个空格
+    }
+
+    if (value) {
+      // 有值，直接设置
+      const fullKey = currentPath.length > 0 ? currentPath.join(".") + "." + key : key;
+      config[fullKey] = parseValue(value);
+    } else {
+      // 无值，进入下一级
+      currentPath.push(key);
+      currentIndent = indent + 2;
+    }
+  }
+
+  return config;
+}
+
+function parseValue(value) {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  if (!isNaN(value) && value !== "") return parseInt(value);
+  if (value.startsWith("'") && value.endsWith("'")) return value.substring(1, value.length - 1);
+  if (value.startsWith('"') && value.endsWith('"')) return value.substring(1, value.length - 1);
+  return value;
+}
+
+function setState(name, value, touched = false) {
+  const meta = metas.find(m => m.name === name);
+  if (meta) {
+    state[name].value = value;
+    state[name].touched = touched || !isDefault(name);
+    const card = cards.get(name);
+    if (card) {
+      const { input, control } = card;
+      if (control === "checkbox") input.checked = Boolean(value);
+      else input.value = value;
+      card.card.classList.toggle("is-touched", state[name].touched);
+    }
+  }
+}
+
+function updateYaml() {
+  yamlOutput.value = buildYaml();
+  yamlMeta.textContent = state ? `已写入 ${metas.filter((meta) => state[meta.name].touched).length} 项` : "仅导出已修改项";
+}
+
+function updateChangedCount() {
+  changedCount.textContent = String(metas.filter((meta) => state[meta.name].touched).length);
+  visibleCount.textContent = String(Array.from(cards.values()).filter(({ card }) => !card.hidden).length);
+}
+
+function loadConfig(config) {
+  for (const [key, value] of Object.entries(config)) {
+    const meta = metas.find(m => m.name === key);
+    if (meta) {
+      setState(key, value, true);
+    }
+  }
+  renderGroups();
+  updateYaml();
+  renderPreview();
+  updateChangedCount();
+}
 resetButton.addEventListener("click", resetAll);
 setActive("foundation");
 renderAll();

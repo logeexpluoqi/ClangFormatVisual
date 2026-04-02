@@ -15,8 +15,8 @@ window.CLANG_FORMAT_OPTIONS = [
   },
   {
     "name": "AlignAfterOpenBracket",
-    "type": "Boolean",
-    "description": "If true , horizontally aligns arguments after an open bracket.",
+    "type": "BracketAlignmentStyle",
+    "description": "If true, horizontally aligns arguments after an open bracket.",
     "version": "3.8",
     "deprecated": false
   },
@@ -267,8 +267,8 @@ window.CLANG_FORMAT_OPTIONS = [
   },
   {
     "name": "BinPackParameters",
-    "type": "BinPackParametersStyle",
-    "description": "The bin pack parameters style to use.",
+    "type": "Boolean",
+    "description": "If false, a function declaration's or function definition's parameters will either all be on the same line or will have one line each.",
     "version": "3.7",
     "deprecated": false
   },
@@ -283,6 +283,118 @@ window.CLANG_FORMAT_OPTIONS = [
     "name": "BraceWrapping",
     "type": "BraceWrappingFlags",
     "description": "Control of individual brace wrapping cases.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.BeforeCatch",
+    "type": "Boolean",
+    "description": "Wrap before catch.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.BeforeElse",
+    "type": "Boolean",
+    "description": "Wrap before else.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.BeforeLambdaBody",
+    "type": "Boolean",
+    "description": "Wrap lambda block.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.BeforeWhile",
+    "type": "Boolean",
+    "description": "Wrap before while.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.IndentBraces",
+    "type": "Boolean",
+    "description": "Indent the wrapped braces themselves.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.SplitEmptyFunction",
+    "type": "Boolean",
+    "description": "If false, empty function body can be put on a single line.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.AfterFunction",
+    "type": "Boolean",
+    "description": "Wrap after function definition.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.AfterControlStatement",
+    "type": "Boolean",
+    "description": "Wrap after control statement.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.AfterClass",
+    "type": "Boolean",
+    "description": "Wrap after class definition.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.AfterStruct",
+    "type": "Boolean",
+    "description": "Wrap after struct definition.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.AfterEnum",
+    "type": "Boolean",
+    "description": "Wrap after enum definition.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.AfterNamespace",
+    "type": "Boolean",
+    "description": "Wrap after namespace definition.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.AfterUnion",
+    "type": "Boolean",
+    "description": "Wrap after union definition.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.BeforeTry",
+    "type": "Boolean",
+    "description": "Wrap before try.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.SplitEmptyRecord",
+    "type": "Boolean",
+    "description": "If false, empty record body can be put on a single line.",
+    "version": "3.8",
+    "deprecated": false
+  },
+  {
+    "name": "BraceWrapping.SplitEmptyNamespace",
+    "type": "Boolean",
+    "description": "If false, empty namespace body can be put on a single line.",
     "version": "3.8",
     "deprecated": false
   },
@@ -1235,6 +1347,48 @@ window.CLANG_FORMAT_OPTIONS = [
     "name": "SpaceBeforeParensOptions",
     "type": "SpaceBeforeParensCustom",
     "description": "Control of individual space before parentheses.",
+    "version": "14",
+    "deprecated": false
+  },
+  {
+    "name": "SpaceBeforeParensOptions.AfterControlStatements",
+    "type": "Boolean",
+    "description": "Add space before parentheses after control statements.",
+    "version": "14",
+    "deprecated": false
+  },
+  {
+    "name": "SpaceBeforeParensOptions.AfterFunctionDefinitionName",
+    "type": "Boolean",
+    "description": "Add space before parentheses after function definition names.",
+    "version": "14",
+    "deprecated": false
+  },
+  {
+    "name": "SpaceBeforeParensOptions.AfterFunctionDeclarationName",
+    "type": "Boolean",
+    "description": "Add space before parentheses after function declaration names.",
+    "version": "14",
+    "deprecated": false
+  },
+  {
+    "name": "SpaceBeforeParensOptions.AfterIfMacros",
+    "type": "Boolean",
+    "description": "Add space before parentheses after if macros.",
+    "version": "14",
+    "deprecated": false
+  },
+  {
+    "name": "SpaceBeforeParensOptions.AfterOverloadedOperator",
+    "type": "Boolean",
+    "description": "Add space before parentheses after overloaded operators.",
+    "version": "14",
+    "deprecated": false
+  },
+  {
+    "name": "SpaceBeforeParensOptions.AfterRequiresClause",
+    "type": "Boolean",
+    "description": "Add space before parentheses after requires clauses.",
     "version": "14",
     "deprecated": false
   },
