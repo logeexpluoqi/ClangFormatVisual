@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClangFormatVisual | clang-format 可视化配置</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">ClangFormatVisual</p>
+        <h1>ClangFormatVisual</h1>
+        <p class="hero-text">
+          所有配置项均来自 clang-format 标准字段。左侧固定导航，中间逐项配置，右侧固定查看实时预览与导出结果。
+        </p>
+        <div class="hero-badges">
+          <span class="hero-badge">中文说明</span>
+          <span class="hero-badge">实时预览</span>
+          <span class="hero-badge">分类清晰</span>
+          <span class="hero-badge">导出 .clang-format</span>
+        </div>
+      </div>
+
+      <div class="hero-actions">
+        <button id="resetButton" class="button button-secondary" type="button">重置全部</button>
+        <button id="copyButton" class="button button-secondary" type="button">复制 YAML</button>
+        <button id="downloadButton" class="button button-primary" type="button">导出 .clang-format</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="side-nav-pane">
+        <div class="side-nav-sticky">
+          <section class="side-nav-card">
+            <p class="panel-kicker">导航</p>
+            <h2>快速跳转</h2>
+            <p class="side-nav-copy">点击分类即可跳到对应配置区，不需要每次回到顶部。</p>
+            <nav id="groupNav" class="group-nav group-nav-vertical"></nav>
+          </section>
+        </div>
+      </aside>
+
+      <main class="config-pane">
+        <section class="toolbar-card">
+          <div class="toolbar-top">
+            <div>
+              <p class="panel-kicker">配置</p>
+              <h2>标准 clang-format 配置项</h2>
+            </div>
+            <div class="toolbar-stats">
+              <span class="stat-pill">已修改 <strong id="changedCount">0</strong></span>
+              <span class="stat-pill">可见 <strong id="visibleCount">0</strong></span>
+            </div>
+          </div>
+
+          <div class="toolbar-grid">
+            <label class="search-field">
+              <span>搜索配置项</span>
+              <input id="searchInput" type="search" placeholder="例如 Brace / Include / Column / Namespace">
+            </label>
+
+            <div class="toolbar-actions">
+              <label class="checkbox-inline">
+                <input id="changedOnlyToggle" type="checkbox">
+                <span>仅看已修改</span>
+              </label>
+              <label class="checkbox-inline">
+                <input id="deprecatedToggle" type="checkbox">
+                <span>包含兼容/弃用项</span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <div id="groupContainer" class="group-container"></div>
+      </main>
+
+      <aside class="preview-pane">
+        <div class="preview-sticky">
+          <section class="preview-card preview-card-main">
+            <div class="preview-head">
+              <div>
+                <p class="panel-kicker">预览</p>
+                <h2>效果对比</h2>
+              </div>
+              <span id="previewStatus" class="preview-status">等待修改</span>
+            </div>
+
+            <div id="previewTabs" class="preview-tabs"></div>
+
+            <div class="preview-scene-head">
+              <div>
+                <h3 id="previewTitle">基础风格</h3>
+                <p id="previewDescription" class="preview-description">显示当前分类最相关的格式化效果片段。</p>
+              </div>
+              <span id="previewMeta" class="preview-meta">实时刷新</span>
+            </div>
+
+            <pre id="previewCode" class="code-block"></pre>
+          </section>
+
+          <section class="preview-card yaml-card">
+            <div class="preview-head">
+              <div>
+                <p class="panel-kicker">导出</p>
+                <h2>.clang-format</h2>
+              </div>
+              <span id="yamlMeta" class="preview-meta">仅导出已修改项</span>
+            </div>
+            <textarea id="yamlOutput" class="yaml-output" readonly spellcheck="false"></textarea>
+          </section>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <template id="selectTemplate">
+    <label class="option-card">
+      <div class="option-top">
+        <div>
+          <span class="option-name"></span>
+          <span class="option-subtitle"></span>
+        </div>
+        <span class="option-badge"></span>
+      </div>
+      <p class="option-description"></p>
+      <div class="option-control-slot">
+        <select class="option-input"></select>
+      </div>
+      <div class="option-bottom">
+        <span class="option-hint"></span>
+        <button class="option-reset" type="button">恢复默认</button>
+      </div>
+    </label>
+  </template>
+
+  <template id="numberTemplate">
+    <label class="option-card">
+      <div class="option-top">
+        <div>
+          <span class="option-name"></span>
+          <span class="option-subtitle"></span>
+        </div>
+        <span class="option-badge"></span>
+      </div>
+      <p class="option-description"></p>
+      <div class="option-control-slot">
+        <input class="option-input" type="number">
+      </div>
+      <div class="option-bottom">
+        <span class="option-hint"></span>
+        <button class="option-reset" type="button">恢复默认</button>
+      </div>
+    </label>
+  </template>
+
+  <template id="checkboxTemplate">
+    <div class="option-card option-card-boolean">
+      <div class="option-top">
+        <div>
+          <span class="option-name"></span>
+          <span class="option-subtitle"></span>
+        </div>
+        <span class="option-badge"></span>
+      </div>
+      <p class="option-description"></p>
+      <div class="option-control-slot">
+        <label class="checkbox-inline checkbox-inline-large">
+          <input class="option-checkbox" type="checkbox">
+          <span>启用</span>
+        </label>
+      </div>
+      <div class="option-bottom">
+        <span class="option-hint"></span>
+        <button class="option-reset" type="button">恢复默认</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="textareaTemplate">
+    <label class="option-card option-card-textarea">
+      <div class="option-top">
+        <div>
+          <span class="option-name"></span>
+          <span class="option-subtitle"></span>
+        </div>
+        <span class="option-badge"></span>
+      </div>
+      <p class="option-description"></p>
+      <div class="option-control-slot option-control-slot-area">
+        <textarea class="option-input option-input-area" rows="4"></textarea>
+      </div>
+      <div class="option-bottom">
+        <span class="option-hint"></span>
+        <button class="option-reset" type="button">恢复默认</button>
+      </div>
+    </label>
+  </template>
+
+  <script src="./clang-format-options-data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
